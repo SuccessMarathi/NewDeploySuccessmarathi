@@ -3,86 +3,57 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import TryCatch from "../middlewares/TryCatch.js";
 import { v4 as uuidv4 } from "uuid";
-import sendForgotMail from '../middlewares/sendMail.js'
+import ProfileImage from "../models/ProfileImage.js";
+//test
+import cloudinary from '../middlewares/cloudinary.js'
 
 
-import multer from "multer";
-import path from "path";
-
-// Configure storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/images/"); // Directory to store images
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
-
-// Configure Multer
-const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    const fileTypes = /jpeg|jpg|png/;
-    const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimeType = fileTypes.test(file.mimetype);
-
-    if (extName && mimeType) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only images are allowed!"));
-    }
-  },
-});
 
 
-export const register = [
-  upload.single("profileImage"), // Middleware to handle image upload
-  TryCatch(async (req, res) => {
-    const { email, name, password, contact } = req.body;
 
-    
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({
-        message: "User Already exists",
-      });
-    }
 
-   
-    const hashPassword = await bcrypt.hash(password, 10);
+export const register = TryCatch(async (req, res) => {
+  const { email, name, password, contact } = req.body;
 
-    const referralLink = uuidv4();
-    const profileImage = req.file ? req.file.path : null;
+  // Check if user already exists
+  let user = await User.findOne({ email });
 
-   
-    user = await User.create({
-      name,
-      email,
-      contact,
-      password: hashPassword,
-      referralLink, 
-      profileImage, 
-      earnings: 0, 
+  if (user)
+    return res.status(400).json({
+      message: "User Already exists",
     });
 
-   
-    const activationToken = jwt.sign(
-      { user: { id: user._id, email: user.email } },
-      "abcd",
-      { expiresIn: "5m" }
-    );
+  // Hash the password
+  const hashPassword = await bcrypt.hash(password, 10);
 
-   
-    res.status(200).json({
-      message: "User created!",
-      activationToken,
-      referralLink: user.referralLink, 
-      profileImage: user.profileImage, 
-    });
-  }),
-];
+  // Generate a unique referral ID
+  const referralLink = uuidv4();
+
+  // Create the user
+  user = await User.create({
+    name,
+    email,
+    contact,
+    password: hashPassword,
+    referralLink, // Add the generated referral link
+    earnings: 0,  // Initialize earnings to 0
+  });
+
+  // Generate activation token
+  const activationToken = jwt.sign(
+    { user: { id: user._id, email: user.email } },
+    process.env.Activation_Secret,
+    { expiresIn: "5m" }
+  );
+
+  // Send response
+  res.status(200).json({
+    message: "User created!",
+    activationToken,
+    referralLink: user.referralLink, // Optional: return referral link in the response
+  });
+});
+
 
 
 
@@ -91,8 +62,6 @@ export const loginUser = TryCatch(async (req, res) => {
 
   const user = await User.findOne({ email });
 
- 
-  
   if (!user)
     return res.status(400).json({
       message: "No User with this email",
@@ -100,85 +69,52 @@ export const loginUser = TryCatch(async (req, res) => {
 
   const mathPassword = await bcrypt.compare(password, user.password);
 
- 
-  
   if (!mathPassword)
     return res.status(400).json({
       message: "wrong Password",
     });
 
-   
-
-  const token = jwt.sign({ _id: user._id }, "abcd", {
+  const token = jwt.sign({ _id: user._id }, process.env.Jwt_Sec, {
     expiresIn: "15d",
   });
-
 
   res.json({
     message: `Welcome back ${user.name}`,
     token,
     user,
   });
-
- 
-
 });
 
 export const myProfile = TryCatch(async (req, res) => {
   const user = await User.findById(req.user._id);
+
   res.json({ user });
 });
 
 export const forgotPassword = TryCatch(async (req, res) => {
   const { email } = req.body;
 
-  console.log("1");
-  
-  // Check if the email exists in the database
   const user = await User.findOne({ email });
 
-  if (!user) {
+  if (!user)
     return res.status(404).json({
-      message: "No user found with this email",
+      message: "No User with this email",
     });
-  }
-  console.log("2");
 
+  const token = jwt.sign({ email }, process.env.Forgot_Secret);
 
-  // Generate a secure token
-  const token = jwt.sign({ email }, "abcd", { expiresIn: "5m" }); // 5 minutes expiry
- 
-  console.log("3",token);
+  const data = { email, token };
 
+  await sendForgotMail("E learning", data);
 
-  // Prepare data for the email
-  const data = {
-    email,
-    token,
-    resetLink: `http://your-frontend-url.com/reset-password?token=${token}`, // Add frontend reset link
-  };
+  user.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
 
-  console.log("4",data);
-
-  // Send the reset password email
-  await sendForgotMail("E-learning Password Reset", data);
-
-  console.log("5");
-
-  // Update user with token expiration time
-  user.resetPasswordExpire = Date.now() + 5 * 60 * 1000; // 5 minutes
   await user.save();
-  
-  console.log("5");
 
-  res.status(200).json({
-    message: "Reset password link has been sent to your email",
+  res.json({
+    message: "Reset Password Link is send to you mail",
   });
-
-  console.log("6");
-
 });
-
 
 export const resetPassword = TryCatch(async (req, res) => {
   const decodedData = jwt.verify(req.query.token, process.env.Forgot_Secret);
@@ -213,6 +149,9 @@ export const resetPassword = TryCatch(async (req, res) => {
 });
 
 
+
+
+//Fetch my affiliates
 export const getAffiliates = async (req, res) => {
   try {
     const userId = req.user.id; // Assuming `req.user` contains authenticated user info
