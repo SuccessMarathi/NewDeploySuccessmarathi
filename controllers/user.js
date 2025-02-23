@@ -10,58 +10,132 @@ import cloudinary from '../middlewares/cloudinary.js'
 
 
 
+export const register = [
+  upload.single("profileImage"), // Middleware to handle image upload
+  TryCatch(async (req, res) => {
+    const { email, name, password, contact } = req.body;
 
+    
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({
+        message: "User Already exists",
+      });
+    }
 
-export const register = TryCatch(async (req, res) => {
-  const { email, name, password, contact } = req.body;
+   
+    const hashPassword = await bcrypt.hash(password, 10);
 
-  // Check if user already exists
-  let user = await User.findOne({ email });
+    const referralLink = uuidv4();
+    const profileImage = req.file ? req.file.path : null;
 
-  if (user)
-    return res.status(400).json({
-      message: "User Already exists",
+    user = await User.create({
+      name,
+      email,
+      contact,
+      password: hashPassword,
+      referralLink, 
+      profileImage, 
+      earnings: 0, 
     });
 
-  // Hash the password
-  const hashPassword = await bcrypt.hash(password, 10);
+   
+    const activationToken = jwt.sign(
+      { user: { id: user._id, email: user.email } },
+      "abcd",
+      { expiresIn: "5m" }
+    );
 
-  // Generate a unique referral ID
-  const referralLink = uuidv4();
+   
+    res.status(200).json({
+      message: "User created!",
+      activationToken,
+      referralLink: user.referralLink, 
+      profileImage: user.profileImage, 
+    });
+  }),
+];
 
-  // Create the user
-  user = await User.create({
-    name,
-    email,
-    contact,
-    password: hashPassword,
-    referralLink, // Add the generated referral link
-    earnings: 0,  // Initialize earnings to 0
-  });
+// export const register = TryCatch(async (req, res) => {
+//   const { email, name, password, contact } = req.body;
 
-  // Generate activation token
-  const activationToken = jwt.sign(
-    { user: { id: user._id, email: user.email } },
-    process.env.Activation_Secret,
-    { expiresIn: "5m" }
-  );
+//   // Check if user already exists
+//   let user = await User.findOne({ email });
 
-  // Send response
-  res.status(200).json({
-    message: "User created!",
-    activationToken,
-    referralLink: user.referralLink, // Optional: return referral link in the response
-  });
-});
+//   if (user)
+//     return res.status(400).json({
+//       message: "User Already exists",
+//     });
+
+//   // Hash the password
+//   const hashPassword = await bcrypt.hash(password, 10);
+
+//   // Generate a unique referral ID
+//   const referralLink = uuidv4();
+
+//   // Create the user
+//   user = await User.create({
+//     name,
+//     email,
+//     contact,
+//     password: hashPassword,
+//     referralLink, // Add the generated referral link
+//     earnings: 0,  // Initialize earnings to 0
+//   });
+
+//   // Generate activation token
+//   const activationToken = jwt.sign(
+//     { user: { id: user._id, email: user.email } },
+//     process.env.Activation_Secret,
+//     { expiresIn: "5m" }
+//   );
+
+//   // Send response
+//   res.status(200).json({
+//     message: "User created!",
+//     activationToken,
+//     referralLink: user.referralLink, // Optional: return referral link in the response
+//   });
+// });
 
 
 
+
+// export const loginUser = TryCatch(async (req, res) => {
+//   const { email, password } = req.body;
+
+//   const user = await User.findOne({ email });
+
+//   if (!user)
+//     return res.status(400).json({
+//       message: "No User with this email",
+//     });
+
+//   const mathPassword = await bcrypt.compare(password, user.password);
+
+//   if (!mathPassword)
+//     return res.status(400).json({
+//       message: "wrong Password",
+//     });
+
+//   const token = jwt.sign({ _id: user._id }, process.env.Jwt_Sec, {
+//     expiresIn: "15d",
+//   });
+
+//   res.json({
+//     message: `Welcome back ${user.name}`,
+//     token,
+//     user,
+//   });
+// });
 
 export const loginUser = TryCatch(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
 
+ 
+  
   if (!user)
     return res.status(400).json({
       message: "No User with this email",
@@ -74,16 +148,25 @@ export const loginUser = TryCatch(async (req, res) => {
       message: "wrong Password",
     });
 
-  const token = jwt.sign({ _id: user._id }, process.env.Jwt_Sec, {
+   
+
+  const token = jwt.sign({ _id: user._id }, "abcd", {
     expiresIn: "15d",
   });
+
 
   res.json({
     message: `Welcome back ${user.name}`,
     token,
     user,
   });
+
+ 
+
 });
+
+
+
 
 export const myProfile = TryCatch(async (req, res) => {
   const user = await User.findById(req.user._id);
