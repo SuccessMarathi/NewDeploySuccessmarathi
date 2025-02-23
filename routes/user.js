@@ -20,6 +20,12 @@ router.post("/user/reset", resetPassword);
 //router.post("/user/progress", isAuth, addProgress);
 //router.get("/user/progress", isAuth, getYourProgress);
 
+router.get("/user/my-affiliates", isAuth, getAffiliates);
+router.get("/leaderboard", isAuth, getLeaderboard);
+
+//route for Profile Image
+router.get("/profile-image", isAuth, getUserProfileImage);
+
 
 
 //try this for my account page
