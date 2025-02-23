@@ -211,3 +211,92 @@ export const resetPassword = TryCatch(async (req, res) => {
 
   res.json({ message: "Password Reset" });
 });
+
+
+export const getAffiliates = async (req, res) => {
+  try {
+    const userId = req.user.id; // Assuming `req.user` contains authenticated user info
+
+    const affiliates = await User.find({ referrer: userId }).select(
+      "name contact purchasedCourses"
+    );
+
+    res.status(200).json({
+      success: true,
+      affiliates,
+    });
+  } catch (error) {
+    console.error("Error fetching affiliates:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch affiliates",
+    });
+  }
+};
+
+
+//controller to fetch the top 10 users with highest earnings
+
+
+export const getLeaderboard = async (req, res) => {
+  try {
+    // Fetch the top 10 users sorted by earnings.total in descending order
+    const leaderboard = await User.find({})
+      .sort({ "earnings.total": -1 })
+      .limit(10)
+      .select("name earnings.total"); // Select only necessary fields
+
+    // Fetch profile images for each user
+    const leaderboardWithImages = await Promise.all(
+      leaderboard.map(async (user) => {
+        const profileImage = await ProfileImage.findOne({ userID: user._id });
+
+        return {
+          _id: user._id,
+          name: user.name,
+          totalEarnings: user.earnings.total,
+          profileImage: profileImage ? profileImage.profileImage : null, // Include image if available
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Leaderboard fetched successfully",
+      leaderboard: leaderboardWithImages,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching leaderboard",
+      error: error.message,
+    });
+  }
+};
+
+
+export const getUserProfileImage = async (req, res) => {
+  try {
+    const userID = req.user._id; // Extract user ID from the authenticated request
+
+    // Find the profile image associated with the user
+    const profileImage = await ProfileImage.findOne({ userID });
+
+    if (!profileImage) {
+      return res.status(404).json({
+        message: "Profile image not found for this user.",
+      });
+    }
+
+    res.status(200).json({
+      message: "Profile image fetched successfully.",
+      profileImage: profileImage.profileImage, // Return the image URL
+    });
+  } catch (error) {
+    console.error("Error fetching profile image:", error);
+    res.status(500).json({
+      message: "An error occurred while fetching the profile image.",
+      error: error.message,
+    });
+  }
+};
