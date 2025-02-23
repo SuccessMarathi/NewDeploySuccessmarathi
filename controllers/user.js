@@ -11,7 +11,7 @@ import cloudinary from '../middlewares/cloudinary.js'
 
 
 export const register = [
-  upload.single("profileImage"), // Middleware to handle image upload
+  // upload.single("profileImage"), // Middleware to handle image upload
   TryCatch(async (req, res) => {
     const { email, name, password, contact } = req.body;
 
