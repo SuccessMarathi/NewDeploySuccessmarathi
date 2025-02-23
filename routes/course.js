@@ -21,6 +21,7 @@ router.get("/lectures/:id", isAuth, fetchLectures);
 router.get("/lectures/:courseId", isAuth,fetchLectureBYCourseId);
 router.get("/mycourse", isAuth, getMyCourses);
 
+
 router.post("/course/purchase", isAuth, verifyPayment);
 router.get('/course/:id', getCourseDetails);
 //router.post("/course/checkout/:id", isAuth, checkout);

@@ -112,139 +112,143 @@ export const checkout = TryCatch(async (req, res) => {
   });
 });
 
+////
 // controllers/coursesController.js
-export const verifyPayment = TryCatch(async (req, res) => {
-  const { courseId, name, email, transactionId, referralId } = req.body;
+// export const verifyPayment = TryCatch(async (req, res) => {
+//   const { courseId, name, email, transactionId, referralId } = req.body;
 
-  // Validate required fields
+//   // Validate required fields
 
-  if (!name || !email || !transactionId || !courseId) {
-    return res.status(400).json({
-      message: "Please fill in all required fields.",
-    });
-  }
-  // Fetch the user and course details
-  const user = await User.findById(req.user._id);
-  const course = await Courses.findById(courseId); 
-  if (!user) {
-    return res.status(404).json({
-      message: "User not found.",
-    });
-  }
+//   if (!name || !email || !transactionId || !courseId) {
+//     return res.status(400).json({
+//       message: "Please fill in all required fields.",
+//     });
+//   }
+//   // Fetch the user and course details
+//   const user = await User.findById(req.user._id);
+//   const course = await Courses.findById(courseId); 
+//   if (!user) {
+//     return res.status(404).json({
+//       message: "User not found.",
+//     });
+//   }
 
-  if (!course) {
-    return res.status(404).json({
-      message: "Course not found.",
-    });
-  }
+//   if (!course) {
+//     return res.status(404).json({
+//       message: "Course not found.",
+//     });
+//   }
 
-  let transactionStatus = "Failure"; // Default to failure
+//   let transactionStatus = "Failure"; // Default to failure
 
-  // Define earnings for each course
-  const earningsMapping = {
-    "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
-    2: { referrer: 700, grandReferrer: 100 },
-    3: { referrer: 1605, grandReferrer: 220 },
-    4: { referrer: 3650, grandReferrer: 399 },
-  };
+//   // Define earnings for each course
+//   const earningsMapping = {
+//     "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+//     2: { referrer: 700, grandReferrer: 100 },
+//     3: { referrer: 1605, grandReferrer: 220 },
+//     4: { referrer: 3650, grandReferrer: 399 },
+//   };
 
-  //for offer
-  //  const earningsMapping = {
-  //   "1": { referrer: 50, grandReferrer: 1 },
-  //   "2": { referrer: 100, grandReferrer: 1 },
-  //   "3": { referrer: 220, grandReferrer: 1 },
-  //   "4": { referrer: 500, grandReferrer: 1 },
-  // };
+//   //for offer
+//   //  const earningsMapping = {
+//   //   "1": { referrer: 50, grandReferrer: 1 },
+//   //   "2": { referrer: 100, grandReferrer: 1 },
+//   //   "3": { referrer: 220, grandReferrer: 1 },
+//   //   "4": { referrer: 500, grandReferrer: 1 },
+//   // };
 
-  const earnings = earningsMapping[courseId] || {
-    referrer: 0,
-    grandReferrer: 0,
-  };
+//   const earnings = earningsMapping[courseId] || {
+//     referrer: 0,
+//     grandReferrer: 0,
+//   };
 
-  try {
-    // Add the course to the user's purchasedCourses array
-    if (!user.purchasedCourses.includes(courseId)) {
-      user.purchasedCourses.push(courseId);
+//   try {
+//     // Add the course to the user's purchasedCourses array
+//     if (!user.purchasedCourses.includes(courseId)) {
+//       user.purchasedCourses.push(courseId);
 
-      // If referralId is present, update the earnings of the referred user
-      if (referralId) {
-        const referrer = await User.findOne({ referralLink: referralId });
-        if (referrer) {
-          updateEarnings(referrer, earnings.referrer);
-          await referrer.save();
+//       // If referralId is present, update the earnings of the referred user
+//       if (referralId) {
+//         const referrer = await User.findOne({ referralLink: referralId });
+//         if (referrer) {
+//           updateEarnings(referrer, earnings.referrer);
+//           await referrer.save();
 
-          user.referrer = referrer;
+//           user.referrer = referrer;
 
-          // Find and update grandReferrer if referrer has a referrer
-          if (referrer.referrer) {
-            const grandReferrer = await User.findById(referrer.referrer);
-            if (grandReferrer) {
-              updateEarnings(grandReferrer, earnings.grandReferrer);
-              await grandReferrer.save();
-            }
-          }
-        }
-      }
+//           // Find and update grandReferrer if referrer has a referrer
+//           if (referrer.referrer) {
+//             const grandReferrer = await User.findById(referrer.referrer);
+//             if (grandReferrer) {
+//               updateEarnings(grandReferrer, earnings.grandReferrer);
+//               await grandReferrer.save();
+//             }
+//           }
+//         }
+//       }
 
-      await user.save();
+//       await user.save();
 
-      transactionStatus = "Success"; // Update status to success
+//       transactionStatus = "Success"; // Update status to success
 
-      res.status(200).json({
-        message: "Course purchased successfully!",
-      });
-    } else {
-      res.status(400).json({
-        message: "You already own this course.",
-      });
-    }
-  } catch (error) {
-    console.error("Transaction failed:", error.message);
-  }
+//       res.status(200).json({
+//         message: "Course purchased successfully!",
+//       });
+//     } else {
+//       res.status(400).json({
+//         message: "You already own this course.",
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Transaction failed:", error.message);
+//   }
 
-  // Log the transaction
-  await Transaction.create({
-    user: user._id,
-    userName: user.name,
-    contact: user.contact,
-    courseId,
-    courseName: course.name,
-    paymentId: transactionId,
-    status: transactionStatus,
-    timestamp: new Date(),
-  });
-});
+//   // Log the transaction
+//   await Transaction.create({
+//     user: user._id,
+//     userName: user.name,
+//     contact: user.contact,
+//     courseId,
+//     courseName: course.name,
+//     paymentId: transactionId,
+//     status: transactionStatus,
+//     timestamp: new Date(),
+//   });
+// });
 
-// Helper function to update earnings
-const updateEarnings = (user, amount) => {
-  const now = new Date();
-  const today = now.toDateString(); // e.g., "Tue Jan 02 2025"
+// // Helper function to update earnings
+// const updateEarnings = (user, amount) => {
+//   const now = new Date();
+//   const today = now.toDateString(); // e.g., "Tue Jan 02 2025"
 
-  // Reset earnings if the day, week, or month has changed
-  const isNewDay = today !== new Date(user.earnings.lastUpdated).toDateString();
-  const isNewWeek =
-    now.getWeek() !== new Date(user.earnings.lastUpdated).getWeek();
-  const isNewMonth =
-    now.getMonth() !== new Date(user.earnings.lastUpdated).getMonth();
+//   // Reset earnings if the day, week, or month has changed
+//   const isNewDay = today !== new Date(user.earnings.lastUpdated).toDateString();
+//   const isNewWeek =
+//     now.getWeek() !== new Date(user.earnings.lastUpdated).getWeek();
+//   const isNewMonth =
+//     now.getMonth() !== new Date(user.earnings.lastUpdated).getMonth();
 
-  if (isNewDay) user.earnings.today = 0;
-  if (isNewWeek) user.earnings.week = 0;
-  if (isNewMonth) user.earnings.month = 0;
+//   if (isNewDay) user.earnings.today = 0;
+//   if (isNewWeek) user.earnings.week = 0;
+//   if (isNewMonth) user.earnings.month = 0;
 
-  // Update earnings
-  user.earnings.today += amount;
-  user.earnings.week += amount;
-  user.earnings.month += amount;
-  user.earnings.total += amount;
-  user.earnings.lastUpdated = now;
-};
+//   // Update earnings
+//   user.earnings.today += amount;
+//   user.earnings.week += amount;
+//   user.earnings.month += amount;
+//   user.earnings.total += amount;
+//   user.earnings.lastUpdated = now;
+// };
 
-// Utility function to get the current week number
-Date.prototype.getWeek = function () {
-  const oneJan = new Date(this.getFullYear(), 0, 1);
-  const numberOfDays = Math.floor((this - oneJan) / (24 * 60 * 60 * 1000));
-  return Math.ceil((this.getDay() + 1 + numberOfDays) / 7);
-};
+// // Utility function to get the current week number
+// Date.prototype.getWeek = function () {
+//   const oneJan = new Date(this.getFullYear(), 0, 1);
+//   const numberOfDays = Math.floor((this - oneJan) / (24 * 60 * 60 * 1000));
+//   return Math.ceil((this.getDay() + 1 + numberOfDays) / 7);
+// };
+////
+
+
 
 // export const paymentVerification = TryCatch(async (req, res) => {
 //   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
@@ -356,3 +360,147 @@ export const fetchLectureBYCourseId = async (req, res, next) => {
   }
 };
 
+
+
+
+
+
+
+export const verifyPayment = TryCatch(async (req, res) => {
+  const { courseId, name, email, transactionId, referralId } = req.body;
+
+  // Validate required fields
+  if (!name || !email || !transactionId || !courseId) {
+    return res.status(400).json({
+      message: "Please fill in all required fields.",
+    });
+  }
+
+  // Ensure courseId is a valid ObjectId
+  if (!mongoose.isValidObjectId(courseId)) {
+    return res.status(400).json({
+      message: "Invalid course ID format.",
+    });
+  }
+
+  const user = await User.findById(req.user._id);
+  const course = await Courses.findById(courseId);
+
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found.",
+    });
+  }
+
+  if (!course) {
+    return res.status(404).json({
+      message: "Course not found.",
+    });
+  }
+
+  let transactionStatus = "Failure"; // Default status
+
+  // Define earnings for each course
+  const earningsMapping = {
+    "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+    "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
+    "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
+    "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
+    "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
+    "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
+  };
+
+  // const earnings = earningsMapping[courseId] || { referrer: 0, grandReferrer: 0 };
+  const earnings = earningsMapping[courseId.toString()] || { referrer: 0, grandReferrer: 0 };
+
+
+  try {
+    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+
+    // Ensure the course is not already purchased
+    if (!user.purchasedCourses.some(course => course.equals(courseObjectId))) {
+      user.purchasedCourses.push(courseObjectId);
+
+      // Process referral earnings
+      if (referralId) {
+        const referrer = await User.findOne({ referralLink: referralId });
+        if (referrer) {
+          updateEarnings(referrer, earnings.referrer);
+          await referrer.save();
+
+          user.referrer = referrer._id;
+
+          // Check if the referrer has their own referrer (grand referrer)
+          if (referrer.referrer) {
+            const grandReferrer = await User.findById(referrer.referrer);
+            if (grandReferrer) {
+              updateEarnings(grandReferrer, earnings.grandReferrer);
+              await grandReferrer.save();
+            }
+          }
+        }
+      }
+
+      await user.save();
+
+      transactionStatus = "Success"; // Update transaction status
+
+      res.status(200).json({
+        message: "Course purchased successfully!",
+      });
+    } else {
+      return res.status(400).json({
+        message: "You already own this course.",
+      });
+    }
+  } catch (error) {
+    console.error("Transaction failed:", error.message);
+    return res.status(500).json({
+      message: "Something went wrong while processing the transaction.",
+    });
+  }
+
+  // Log the transaction
+  await Transaction.create({
+    user: user._id,
+    userName: user.name,
+    contact: user.contact,
+    courseId,
+    courseName: course.name,
+    paymentId: transactionId,
+    status: transactionStatus,
+    timestamp: new Date(),
+  });
+});
+
+
+
+
+// Helper function to update earnings
+const updateEarnings = (user, amount) => {
+  const now = new Date();
+  const today = now.toDateString(); // e.g., "Tue Jan 02 2025"
+
+  // Reset earnings if the day, week, or month has changed
+  const isNewDay = today !== new Date(user.earnings.lastUpdated).toDateString();
+  const isNewWeek = now.getWeek() !== new Date(user.earnings.lastUpdated).getWeek();
+  const isNewMonth = now.getMonth() !== new Date(user.earnings.lastUpdated).getMonth();
+
+  if (isNewDay) user.earnings.today = 0;
+  if (isNewWeek) user.earnings.week = 0;
+  if (isNewMonth) user.earnings.month = 0;
+
+  // Update earnings
+  user.earnings.today += amount;
+  user.earnings.week += amount;
+  user.earnings.month += amount;
+  user.earnings.total += amount;
+  user.earnings.lastUpdated = now;
+};
+
+// Utility function to get the current week number
+Date.prototype.getWeek = function () {
+  const oneJan = new Date(this.getFullYear(), 0, 1);
+  const numberOfDays = Math.floor((this - oneJan) / (24 * 60 * 60 * 1000));
+  return Math.ceil((this.getDay() + 1 + numberOfDays) / 7);
+};

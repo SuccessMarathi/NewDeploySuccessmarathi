@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: "user", // Default value is "user"
   },
-  purchasedCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
+  purchasedCourses: [{ type: mongoose.Schema.Types.Mixed, ref: "Course" }],
   referralLink: {
     type: String,
     unique: true,
