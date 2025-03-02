@@ -366,41 +366,47 @@ export const fetchLectureBYCourseId = async (req, res, next) => {
 
 
 
+
+
 export const verifyPayment = TryCatch(async (req, res) => {
   const { courseId, name, email, transactionId, referralId } = req.body;
 
-  // Validate required fields
+  // ✅ Debugging Log
+  console.log("Received courseId:", courseId);
+
+  // ✅ Validate required fields
   if (!name || !email || !transactionId || !courseId) {
-    return res.status(400).json({
-      message: "Please fill in all required fields.",
-    });
+    return res.status(400).json({ message: "Please fill in all required fields." });
   }
 
-  // Ensure courseId is a valid ObjectId
+  // ✅ Ensure courseId is a valid ObjectId
   if (!mongoose.isValidObjectId(courseId)) {
-    return res.status(400).json({
-      message: "Invalid course ID format.",
-    });
+    return res.status(400).json({ message: "Invalid course ID format." });
   }
 
-  const user = await User.findById(req.user._id);
-  const course = await Courses.findById(courseId);
+  // ✅ Convert courseId to ObjectId
+  const courseObjectId = new mongoose.Types.ObjectId(courseId);
+  console.log("Converted courseId:", courseObjectId);
 
-  if (!user) {
-    return res.status(404).json({
-      message: "User not found.",
-    });
+  let user, course;
+
+  try {
+    // ✅ Fetch User and Course in Parallel for Efficiency
+    [user, course] = await Promise.all([
+      User.findById(req.user._id),
+      Courses.findById(courseObjectId),
+    ]);
+  } catch (error) {
+    console.error("Database fetch error:", error.message);
+    return res.status(500).json({ message: "Database error occurred." });
   }
 
-  if (!course) {
-    return res.status(404).json({
-      message: "Course not found.",
-    });
-  }
+  if (!user) return res.status(404).json({ message: "User not found." });
+  if (!course) return res.status(404).json({ message: "Course not found." });
 
   let transactionStatus = "Failure"; // Default status
 
-  // Define earnings for each course
+  // ✅ Define earnings for each course
   const earningsMapping = {
     "67b81fdeb7e36f5e02b649cd": { referrer: 50, grandReferrer: 1 },
     "67b82012b7e36f5e02b649cf": { referrer: 100, grandReferrer: 16 },
@@ -410,27 +416,24 @@ export const verifyPayment = TryCatch(async (req, res) => {
     "67b820b1b7e36f5e02b649d7": { referrer: 1460, grandReferrer: 200 },
   };
 
-  // const earnings = earningsMapping[courseId] || { referrer: 0, grandReferrer: 0 };
   const earnings = earningsMapping[courseId.toString()] || { referrer: 0, grandReferrer: 0 };
 
-
   try {
-    const courseObjectId = new mongoose.Types.ObjectId(courseId);
-
-    // Ensure the course is not already purchased
+    // ✅ Check if user already owns the course
     if (!user.purchasedCourses.some(course => course.equals(courseObjectId))) {
       user.purchasedCourses.push(courseObjectId);
 
-      // Process referral earnings
+      // ✅ Handle Referral Earnings
       if (referralId) {
         const referrer = await User.findOne({ referralLink: referralId });
+
         if (referrer) {
           updateEarnings(referrer, earnings.referrer);
           await referrer.save();
 
           user.referrer = referrer._id;
 
-          // Check if the referrer has their own referrer (grand referrer)
+          // ✅ Handle Grand Referrer
           if (referrer.referrer) {
             const grandReferrer = await User.findById(referrer.referrer);
             if (grandReferrer) {
@@ -442,35 +445,32 @@ export const verifyPayment = TryCatch(async (req, res) => {
       }
 
       await user.save();
+      transactionStatus = "Success"; // ✅ Update transaction status
 
-      transactionStatus = "Success"; // Update transaction status
-
-      res.status(200).json({
-        message: "Course purchased successfully!",
-      });
+      res.status(200).json({ message: "Course purchased successfully!" });
     } else {
-      return res.status(400).json({
-        message: "You already own this course.",
-      });
+      return res.status(400).json({ message: "You already own this course." });
     }
   } catch (error) {
-    console.error("Transaction failed:", error.message);
-    return res.status(500).json({
-      message: "Something went wrong while processing the transaction.",
-    });
+    console.error("Transaction processing failed:", error.message);
+    return res.status(500).json({ message: "Error while processing transaction." });
   }
 
-  // Log the transaction
-  await Transaction.create({
-    user: user._id,
-    userName: user.name,
-    contact: user.contact,
-    courseId,
-    courseName: course.name,
-    paymentId: transactionId,
-    status: transactionStatus,
-    timestamp: new Date(),
-  });
+  // ✅ Log the transaction
+  try {
+    await Transaction.create({
+      user: user._id,
+      userName: user.name,
+      contact: user.contact,
+      courseId: courseObjectId,
+      courseName: course.name,
+      paymentId: transactionId,
+      status: transactionStatus,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    console.error("Transaction logging failed:", error.message);
+  }
 });
 
 
