@@ -407,15 +407,23 @@ export const verifyPayment = TryCatch(async (req, res) => {
   let transactionStatus = "Failure"; // Default status
 
   // ✅ Define earnings for each course
-  const earningsMapping = {
-    "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
-    "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
-    "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
-    "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
-    "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
-    "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
-  };
+  // const earningsMapping = {
+  //   "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+  //   "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
+  //   "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
+  //   "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
+  //   "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
+  //   "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
+  // };
 
+  const earningsMapping = {
+    "67b81fdeb7e36f5e02b649cd": { referrer: 85, grandReferrer: 1 },
+    "67b82012b7e36f5e02b649cf": { referrer: 168, grandReferrer: 24 },
+    "67b82046b7e36f5e02b649d1": { referrer: 294, grandReferrer: 40 },
+    "67b8206eb7e36f5e02b649d3": { referrer: 420, grandReferrer: 60 },
+    "67b82092b7e36f5e02b649d5": { referrer: 960, grandReferrer: 132 },
+    "67b820b1b7e36f5e02b649d7": { referrer: 2190, grandReferrer: 200 },
+  };
   const earnings = earningsMapping[courseId.toString()] || { referrer: 0, grandReferrer: 0 };
 
   try {
