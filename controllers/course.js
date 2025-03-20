@@ -369,13 +369,13 @@ export const fetchLectureBYCourseId = async (req, res, next) => {
 
 
 export const verifyPayment = TryCatch(async (req, res) => {
-  const { courseId, name, email, transactionId, referralId } = req.body;
+  const { courseId, name, email, referralId } = req.body;
 
   // ✅ Debugging Log
   console.log("Received courseId:", courseId);
 
   // ✅ Validate required fields
-  if (!name || !email || !transactionId || !courseId) {
+  if (!name || !email || !courseId) {
     return res.status(400).json({ message: "Please fill in all required fields." });
   }
 
@@ -472,7 +472,7 @@ export const verifyPayment = TryCatch(async (req, res) => {
       contact: user.contact,
       courseId: courseObjectId,
       courseName: course.name,
-      paymentId: transactionId,
+      // paymentId: transactionId,
       status: transactionStatus,
       timestamp: new Date(),
     });
