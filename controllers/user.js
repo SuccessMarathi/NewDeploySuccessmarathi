@@ -11,11 +11,10 @@ import cloudinary from '../middlewares/cloudinary.js'
 
 
 export const register = [
-  // upload.single("profileImage"), // Middleware to handle image upload
   TryCatch(async (req, res) => {
     const { email, name, password, contact } = req.body;
 
-    
+    // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({
@@ -23,38 +22,56 @@ export const register = [
       });
     }
 
-   
+    // Hash the password
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const referralLink = uuidv4();
+    // Generate a Unique 6-Digit Referral ID
+    let newReferralId;
+    let isUnique = false;
+
+    while (!isUnique) {
+      newReferralId = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const existingReferral = await User.findOne({ referralId: newReferralId });
+      if (!existingReferral) {
+        isUnique = true;
+      }
+    }
+
+    // Create referral link
+    const referralLink = `https://successmarathi.vercel.app/packages?ref=${newReferralId}`;
+
+    // Store profile image (if uploaded)
     const profileImage = req.file ? req.file.path : null;
 
+    // Create new user
     user = await User.create({
       name,
       email,
       contact,
       password: hashPassword,
+      referralId: newReferralId, // Save referral ID in DB
       referralLink, 
       profileImage, 
-      earnings: 0, 
+      earnings: 0,
     });
 
-   
+    // Generate activation token (expires in 5 minutes)
     const activationToken = jwt.sign(
       { user: { id: user._id, email: user.email } },
       "abcd",
       { expiresIn: "5m" }
     );
 
-   
+    // Send response
     res.status(200).json({
       message: "User created!",
       activationToken,
-      referralLink: user.referralLink, 
-      profileImage: user.profileImage, 
+      referralLink: user.referralLink,
+      profileImage: user.profileImage,
     });
   }),
 ];
+
 
 // export const register = TryCatch(async (req, res) => {
 //   const { email, name, password, contact } = req.body;
