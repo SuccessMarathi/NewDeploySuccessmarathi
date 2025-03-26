@@ -38,12 +38,12 @@ export const register = [
     }
 
     // Create referral link
-    const referralLink = `https://successmarathi.vercel.app/packages?ref=${newReferralId}`;
+    const referralLink = newReferralId;
 
     // Store profile image (if uploaded)
     const profileImage = req.file ? req.file.path : null;
 
-    // Create new user
+    // Create new userm
     user = await User.create({
       name,
       email,
