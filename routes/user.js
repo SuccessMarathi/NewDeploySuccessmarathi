@@ -9,7 +9,7 @@ import {
   myProfile,
   register,
   resetPassword,
-  deleteUser
+  deleteUserByEmail
 } from "../controllers/user.js" ;
 import { isAuth } from "../middlewares/isAuth.js";
 //import { addProgress, getYourProgress } from "../controllers/course.js";
@@ -40,7 +40,7 @@ router.get("/leaderboard", isAuth, getLeaderboard);
 
 //route for Profile Image
 router.get("/profile-image", isAuth, getUserProfileImage);
-router.delete("/users/:id", deleteUser);
+router.delete("/users/delete", deleteUserByEmail);
 
 
 

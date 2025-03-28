@@ -342,19 +342,25 @@ export const getUserProfileImage = async (req, res) => {
 
 
 
-// to delete users
-export const deleteUser = async (req, res) => {
-  try {
-    const userId = req.params.id;
 
-    // Check if user exists
-    const user = await User.findById(userId);
+export const deleteUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
     // Delete the user
-    await User.findByIdAndDelete(userId);
+    await User.deleteOne({ email });
 
     res.status(200).json({
       success: true,
