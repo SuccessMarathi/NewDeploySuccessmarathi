@@ -280,3 +280,66 @@ export const courselectures = async (req, res) => {
 };
 
 
+
+
+import nodemailer from "nodemailer";
+
+export const sendMail = TryCatch(async (req, res) => {
+  const { email, amount } = req.body;
+
+  if (!email || !amount) {
+    return res.status(400).json({ message: "Email and amount are required." });
+  }
+
+  // Get the current date in DD-MM-YYYY format
+  const date = new Date().toLocaleDateString("en-IN");
+
+  // Nodemailer transporter setup
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "successmarathi4january@gmail.com",
+      pass: "cjcvnnepprcwwxhe",
+    },
+  });
+
+  // HTML email content with inline CSS
+  const mailOptions = {
+    from: "nirmaan.cyborg@gmail.com",
+    to: email,
+    subject: "Payment Confirmation - SuccessMarathi",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
+        <h2 style="color: #2c3e50; text-align: center;">🎉 Congratulations, ${email}! 🎉</h2>
+        <p style="font-size: 18px; color: #333;">Your earnings have been transferred from <strong>SuccessMarathi</strong>!</p>
+        
+        <div style="text-align: center; padding: 15px; background-color: #dff0d8; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #3c763d;">💰 You Have Earned</h3>
+          <p style="font-size: 22px; font-weight: bold; color: #3c763d;">₹${amount}</p>
+        </div>
+
+        <p style="font-size: 16px; color: #555;">We are happy to inform you that we have transferred the payment into your bank account.</p>
+        <p style="text-align: right; font-size: 14px; color: #777;">📅 Date: <strong>${date}</strong></p>
+
+        <div style="margin-top: 20px; text-align: center;">
+          <p style="font-size: 16px; color: #222;"><strong>Founder,</strong></p>
+          <p style="font-size: 18px; font-weight: bold; color: #222;">Akash Rathod</p>
+        </div>
+      </div>
+    `,
+  };
+
+  // Send the email
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email:", error);
+      return res.status(500).json({ message: "Failed to send email." });
+    } else {
+      console.log("Email sent:", info.response);
+      res.status(200).json({ message: "Email sent successfully!" });
+    }
+  });
+});
+
+
+

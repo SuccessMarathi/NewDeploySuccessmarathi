@@ -9,7 +9,8 @@ import {
   getAllUser,
   getAllUsers,
   getlecturesByCourseId,
-  getallCourses
+  getallCourses,
+  sendMail
   //updateRole,
 } from "../controllers/admin.js";
 import  {uploadFiles}  from "../middlewares/multer.js";
@@ -28,5 +29,6 @@ router.get("/stats", isAuth, isAdmin, getAllStats);
 //router.put("/user/:id", isAuth, updateRole);
 router.get("/users", isAuth, isAdmin, getAllUser);
 router.get("/admin/users", isAuth, isAdmin, getAllUsers);
+router.post("/admin/sendMail", isAuth, isAdmin, sendMail);
 
 export default router;
