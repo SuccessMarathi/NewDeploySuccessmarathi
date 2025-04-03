@@ -284,6 +284,8 @@ export const courselectures = async (req, res) => {
 
 import nodemailer from "nodemailer";
 
+
+
 export const sendMail = TryCatch(async (req, res) => {
   const { email, amount } = req.body;
 
@@ -294,18 +296,20 @@ export const sendMail = TryCatch(async (req, res) => {
   // Get the current date in DD-MM-YYYY format
   const date = new Date().toLocaleDateString("en-IN");
 
-  // Nodemailer transporter setup
+  // Nodemailer transporter setup with SMTP
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465, // Use 587 for TLS
+    secure: true, // true for 465 (SSL), false for 587 (TLS)
     auth: {
       user: "successmarathi4january@gmail.com",
-      pass: "cjcvnnepprcwwxhe",
+      pass: "cjcvnnepprcwwxhe", // Replace with App Password if needed
     },
   });
 
   // HTML email content with inline CSS
   const mailOptions = {
-    from: "nirmaan.cyborg@gmail.com",
+    from: "successmarathi4january@gmail.com",
     to: email,
     subject: "Payment Confirmation - SuccessMarathi",
     html: `
@@ -329,17 +333,21 @@ export const sendMail = TryCatch(async (req, res) => {
     `,
   };
 
-  // Send the email
+  // Send the email with error logging
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error("Error sending email:", error);
-      return res.status(500).json({ message: "Failed to send email." });
+      return res.status(500).json({
+        message: "Failed to send email.",
+        error: error.message, // Send the exact error to frontend
+      });
     } else {
-      console.log("Email sent:", info.response);
-      res.status(200).json({ message: "Email sent successfully!" });
+      console.log("Email sent successfully!");
+      
+      return res.status(200).json({
+        message: "Email sent successfully!",
+      
+      });
     }
   });
 });
-
-
-
