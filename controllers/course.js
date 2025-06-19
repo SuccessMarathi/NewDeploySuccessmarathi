@@ -432,8 +432,7 @@ export const verifyPayment = TryCatch(async (req, res) => {
      "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
     "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
      "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
-     "6853dab69039f13821d77c22" : { referrer: 6199, grandReferrer: 800 }
-   };
+     };
 
   
   const earnings = earningsMapping[courseId.toString()] || { referrer: 0, grandReferrer: 0 };
