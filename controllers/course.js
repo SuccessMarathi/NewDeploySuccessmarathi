@@ -426,12 +426,12 @@ export const verifyPayment = TryCatch(async (req, res) => {
   //   "6853dab69039f13821d77c22" : { referrer: 6199, grandReferrer: 800 }
   // };
    const earningsMapping = {
-     "67b81fdeb7e36f5e02b649cd": { referrer: 69, grandReferrer: 1 },
-     "67b82012b7e36f5e02b649cf": { referrer: 130, grandReferrer: 20 },
-     "67b82046b7e36f5e02b649d1": { referrer: 230, grandReferrer: 35 },
-     "67b8206eb7e36f5e02b649d3": { referrer: 330, grandReferrer: 49 },
-    "67b82092b7e36f5e02b649d5": { referrer: 725, grandReferrer: 110 },
-     "67b820b1b7e36f5e02b649d7": { referrer: 1649, grandReferrer: 250 },
+     "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+     "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
+     "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
+     "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
+    "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
+     "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
      };
 
   
