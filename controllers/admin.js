@@ -383,9 +383,25 @@ export const getPendingOrders = async (req, res) => {
 
 // Helper to update earnings
 const updateEarnings = (user, amount) => {
-  user.earnings = (user.earnings || 0) + amount;
-};
+  const now = new Date();
+  const today = now.toDateString(); // e.g., "Tue Jan 02 2025"
 
+  // Reset earnings if the day, week, or month has changed
+  const isNewDay = today !== new Date(user.earnings.lastUpdated).toDateString();
+  const isNewWeek = now.getWeek() !== new Date(user.earnings.lastUpdated).getWeek();
+  const isNewMonth = now.getMonth() !== new Date(user.earnings.lastUpdated).getMonth();
+
+  if (isNewDay) user.earnings.today = 0;
+  if (isNewWeek) user.earnings.week = 0;
+  if (isNewMonth) user.earnings.month = 0;
+
+  // Update earnings
+  user.earnings.today += amount;
+  user.earnings.week += amount;
+  user.earnings.month += amount;
+  user.earnings.total += amount;
+  user.earnings.lastUpdated = now;
+};
 
 
 export const handlePendingOrder = TryCatch(async (req, res) => {
@@ -396,9 +412,7 @@ export const handlePendingOrder = TryCatch(async (req, res) => {
   }
 
   const order = await PendingOrder.findById(orderId);
-  if (!order) {
-    return res.status(404).json({ message: "Order not found" });
-  }
+  if (!order) return res.status(404).json({ message: "Order not found" });
 
   const course = await Courses.findById(order.course);
   const user = await User.findById(order.user);
@@ -430,6 +444,7 @@ export const handlePendingOrder = TryCatch(async (req, res) => {
     if (!alreadyPurchased) {
       user.purchasedCourses.push(courseObjectId);
 
+      // 🟡 Handle referral and grand referral earnings safely
       if (order.referrer) {
         const referrer = await User.findById(order.referrer);
         if (referrer) {
