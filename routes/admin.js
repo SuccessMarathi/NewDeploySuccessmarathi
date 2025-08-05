@@ -10,7 +10,9 @@ import {
   getAllUsers,
   getlecturesByCourseId,
   getallCourses,
-  sendMail
+  sendMail,
+  getPendingOrders,
+  handlePendingOrder,
   //updateRole,
 } from "../controllers/admin.js";
 import  {uploadFiles}  from "../middlewares/multer.js";
@@ -30,5 +32,8 @@ router.get("/stats", isAuth, isAdmin, getAllStats);
 router.get("/users", isAuth, isAdmin, getAllUser);
 router.get("/admin/users", isAuth, isAdmin, getAllUsers);
 router.post("/admin/sendMail", isAuth, isAdmin, sendMail);
+router.get("/admin/pending-orders", isAuth, isAdmin, getPendingOrders);
+router.post("/admin/handle-order", isAuth, isAdmin, handlePendingOrder);
+
 
 export default router;

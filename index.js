@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import Razorpay from "razorpay";
 import { connectDb } from "./database/db.js";
+import { handlePendingOrder } from "./controllers/admin.js";
 
 // Load environment variables
 dotenv.config();
@@ -38,6 +39,8 @@ import adminRoutes from "./routes/admin.js";
 app.use("/api", userRoutes);
 app.use("/api", courseRoutes);
 app.use("/api", adminRoutes);
+
+app.post("/approve", handlePendingOrder);
 
 // Create Razorpay Order
 app.post("/create-order", async (req, res) => {

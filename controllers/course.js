@@ -5,6 +5,7 @@ import { Lecture } from "../models/Lecture.js";
 import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import mongoose from "mongoose";
+import PendingOrder from "../models/PendingOrder.js";
 
 export const getAllCourses = TryCatch(async (req, res) => {
   const courses = await Courses.find();
@@ -368,54 +369,55 @@ export const fetchLectureBYCourseId = async (req, res, next) => {
 
 
 
-export const verifyPayment = TryCatch(async (req, res) => {
-  const { courseId, name, email, referralId } = req.body;
+// export const verifyPayment = TryCatch(async (req, res) => {
+//   const { courseId, name, email, referralId,  transactionId  } = req.body;
 
-  // ✅ Debugging Log
-  console.log("Received courseId:", courseId);
+//   // ✅ Debugging Log
+//   console.log("Received courseId:", courseId);
 
-  // ✅ Validate required fields
-  if (!name || !email || !courseId) {
-    return res.status(400).json({ message: "Please fill in all required fields." });
-  }
+//   // ✅ Validate required fields
+//   if (!name || !email || !courseId ||  !transactionId) {
+//     return res.status(400).json({ message: "Please fill in all required fields." });
+//   }
 
-  // ✅ Ensure courseId is a valid ObjectId
-  if (!mongoose.isValidObjectId(courseId)) {
-    return res.status(400).json({ message: "Invalid course ID format." });
-  }
+//   // ✅ Ensure courseId is a valid ObjectId
+//   if (!mongoose.isValidObjectId(courseId)) {
+//     return res.status(400).json({ message: "Invalid course ID format." });
+//   }
 
-  // ✅ Convert courseId to ObjectId
-  const courseObjectId = new mongoose.Types.ObjectId(courseId);
-  console.log("Converted courseId:", courseObjectId);
+//   // ✅ Convert courseId to ObjectId
+//   const courseObjectId = new mongoose.Types.ObjectId(courseId);
+//   console.log("Converted courseId:", courseObjectId);
 
-  let user, course;
+//   let user, course;
 
-  try {
-    // ✅ Fetch User and Course in Parallel for Efficiency
-    [user, course] = await Promise.all([
-      User.findById(req.user._id),
-      Courses.findById(courseObjectId),
-    ]);
-  } catch (error) {
-    console.error("Database fetch error:", error.message);
-    return res.status(500).json({ message: "Database error occurred." });
-  }
+//   try {
+//     // ✅ Fetch User and Course in Parallel for Efficiency
+//     [user, course] = await Promise.all([
+//       User.findById(req.user._id),
+//       Courses.findById(courseObjectId),
+//     ]);
+//   } catch (error) {
+//     console.error("Database fetch error:", error.message);
+//     return res.status(500).json({ message: "Database error occurred." });
+//   }
 
-  if (!user) return res.status(404).json({ message: "User not found." });
-  if (!course) return res.status(404).json({ message: "Course not found." });
+//   if (!user) return res.status(404).json({ message: "User not found." });
+//   if (!course) return res.status(404).json({ message: "Course not found." });
 
-  let transactionStatus = "Failure"; // Default status
+//   let transactionStatus = "Failure"; // Default status
 
-  // Define earnings for each course
-  // const earningsMapping = {
-  //   "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
-  //   "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
-  //   "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
-  //   "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
-  //   "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
-  //   "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
-  // };
+//   // Define earnings for each course
+//   // const earningsMapping = {
+//   //   "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+//   //   "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
+//   //   "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
+//   //   "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
+//   //   "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
+//   //   "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
+//   // };
 
+<<<<<<< HEAD
   // const earningsMapping = {
   //   "67b81fdeb7e36f5e02b649cd": { referrer: 85, grandReferrer: 1 },
   //   "67b82012b7e36f5e02b649cf": { referrer: 168, grandReferrer: 24 },
@@ -433,64 +435,83 @@ export const verifyPayment = TryCatch(async (req, res) => {
     "67b82092b7e36f5e02b649d5": { referrer: 963, grandReferrer: 132 },
      "67b820b1b7e36f5e02b649d7": { referrer: 2190, grandReferrer: 200 },
      };
+=======
+//   // const earningsMapping = {
+//   //   "67b81fdeb7e36f5e02b649cd": { referrer: 85, grandReferrer: 1 },
+//   //   "67b82012b7e36f5e02b649cf": { referrer: 168, grandReferrer: 24 },
+//   //   "67b82046b7e36f5e02b649d1": { referrer: 294, grandReferrer: 40 },
+//   //   "67b8206eb7e36f5e02b649d3": { referrer: 420, grandReferrer: 60 },
+//   //   "67b82092b7e36f5e02b649d5": { referrer: 960, grandReferrer: 132 },
+//   //   "67b820b1b7e36f5e02b649d7": { referrer: 2190, grandReferrer: 200 },
+//   //   "6853dab69039f13821d77c22" : { referrer: 6199, grandReferrer: 800 }
+//   // };
+//    const earningsMapping = {
+//      "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+//      "67b82012b7e36f5e02b649cf":{ referrer: 280, grandReferrer: 40 },
+//      "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
+//      "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
+//     "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
+//      "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
+//      };
+>>>>>>> 92d5c72 (pending orders on admin panel plus form system again)
 
   
-  const earnings = earningsMapping[courseId.toString()] || { referrer: 0, grandReferrer: 0 };
+//   const earnings = earningsMapping[courseId.toString()] || { referrer: 0, grandReferrer: 0 };
 
-  try {
-    // ✅ Check if user already owns the course
-    if (!user.purchasedCourses.some(course => course.equals(courseObjectId))) {
-      user.purchasedCourses.push(courseObjectId);
+//   try {
+//     // ✅ Check if user already owns the course
+//     if (!user.purchasedCourses.some(course => course.equals(courseObjectId))) {
+//       user.purchasedCourses.push(courseObjectId);
 
-      // ✅ Handle Referral Earnings
-      if (referralId) {
-        const referrer = await User.findOne({ referralLink: referralId });
+//       // ✅ Handle Referral Earnings
+//       if (referralId) {
+//         const referrer = await User.findOne({ referralLink: referralId });
 
-        if (referrer) {
-          updateEarnings(referrer, earnings.referrer);
-          await referrer.save();
+//         if (referrer) {
+//           updateEarnings(referrer, earnings.referrer);
+//           await referrer.save();
 
-          user.referrer = referrer._id;
+//           user.referrer = referrer._id;
 
-          // ✅ Handle Grand Referrer
-          if (referrer.referrer) {
-            const grandReferrer = await User.findById(referrer.referrer);
-            if (grandReferrer) {
-              updateEarnings(grandReferrer, earnings.grandReferrer);
-              await grandReferrer.save();
-            }
-          }
-        }
-      }
+//           // ✅ Handle Grand Referrer
+//           if (referrer.referrer) {
+//             const grandReferrer = await User.findById(referrer.referrer);
+//             if (grandReferrer) {
+//               updateEarnings(grandReferrer, earnings.grandReferrer);
+//               await grandReferrer.save();
+//             }
+//           }
+//         }
+//       }
 
-      await user.save();
-      transactionStatus = "Success"; // ✅ Update transaction status
+//       await user.save();
+//       transactionStatus = "Success"; // ✅ Update transaction status
 
-      res.status(200).json({ message: "Course purchased successfully!" });
-    } else {
-      return res.status(400).json({ message: "You already own this course." });
-    }
-  } catch (error) {
-    console.error("Transaction processing failed:", error.message);
-    return res.status(500).json({ message: "Error while processing transaction." });
-  }
+//       res.status(200).json({ message: "Course purchased successfully!" });
+//     } else {
+//       return res.status(400).json({ message: "You already own this course." });
+//     }
+//   } catch (error) {
+//     console.error("Transaction processing failed:", error.message);
+//     return res.status(500).json({ message: "Error while processing transaction." });
+//   }
 
-  // ✅ Log the transaction
-  try {
-    await Transaction.create({
-      user: user._id,
-      userName: user.name,
-      contact: user.contact,
-      courseId: courseObjectId,
-      courseName: course.name,
-      // paymentId: transactionId,
-      status: transactionStatus,
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    console.error("Transaction logging failed:", error.message);
-  }
-});
+//   // ✅ Log the transaction
+//   try {
+//     await Transaction.create({
+//       user: user._id,
+//       userName: user.name,
+//       contact: user.contact,
+//       courseId: courseObjectId,
+//       courseName: course.name,
+//       paymentId: transactionId,
+//       status: transactionStatus,
+//       timestamp: new Date(),
+//     });
+//   } catch (error) {
+//     console.error("Transaction logging failed:", error.message);
+//   }
+// });
 
 
 
@@ -523,3 +544,122 @@ Date.prototype.getWeek = function () {
   const numberOfDays = Math.floor((this - oneJan) / (24 * 60 * 60 * 1000));
   return Math.ceil((this.getDay() + 1 + numberOfDays) / 7);
 };
+
+
+
+
+
+
+
+
+
+// export const verifyPayment = TryCatch(async (req, res) => {
+//   const { courseId, name, email, referralId, transactionId } = req.body;
+
+//   if (!name || !email || !courseId || !transactionId)
+//     return res.status(400).json({ message: "All fields are required." });
+
+//   const course = await Courses.findById(courseId);
+//   const user = await User.findById(req.user._id);
+//   if (!user || !course) return res.status(404).json({ message: "User or Course not found." });
+
+//   const referrer = referralId
+//     ? await User.findOne({ referralLink: referralId })
+//     : null;
+
+//   const existingPending = await PendingOrder.findOne({
+//     user: user._id,
+//     course: courseId,
+//     transactionId,
+//   });
+
+//   if (existingPending) {
+//     return res.status(400).json({ message: "This payment is already pending approval." });
+//   }
+
+//   const newPendingOrder = await PendingOrder.create({
+//     user: user._id,
+//     userName: user.name,
+//     email,
+//     contact: user.contact,
+//     referrer: referrer?._id,
+//     referrerName: referrer?.name || "",
+//     course: courseId,
+//     courseName: course.name,
+//     transactionId,
+//   });
+
+//   return res.status(200).json({ message: "Payment submitted. Awaiting admin approval." });
+// });
+
+
+
+export const verifyPayment = TryCatch(async (req, res) => {
+  const { courseId, name, email, referralId, transactionId } = req.body;
+
+  console.log("🔥 verifyPayment hit!");
+  console.log("📦 Payload:", req.body);
+  console.log("👤 Authenticated user from isAuth middleware:", req.user);
+
+  // 1. Validate inputs
+  if (!name || !email || !courseId || !transactionId) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  // 2. Ensure valid ObjectId for course
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({ message: "Invalid course ID." });
+  }
+
+  // 3. Fetch course and user
+  const course = await Courses.findById(courseId);
+  const user = await User.findById(req.user?._id);
+
+  if (!user || !course) {
+    console.log("❌ User or Course not found");
+    return res.status(404).json({ message: "User or Course not found." });
+  }
+
+  // 4. Find referrer
+  const referrer = referralId
+    ? await User.findOne({ referralLink: referralId })
+    : null;
+
+  // 5. Prevent duplicate pending order
+  const existingPending = await PendingOrder.findOne({
+    user: user._id,
+    course: courseId,
+    transactionId,
+  });
+
+  if (existingPending) {
+    console.log("⚠️ Duplicate pending order detected");
+    return res
+      .status(400)
+      .json({ message: "This payment is already pending approval." });
+  }
+
+  // 6. Create Pending Order
+  try {
+    const newPendingOrder = await PendingOrder.create({
+      user: user._id,
+      userName: user.name,
+      email,
+      contact: user.contact,
+      referrer: referrer?._id,
+      referrerName: referrer?.name || "",
+      course: courseId,
+      courseName: course.name,
+      transactionId,
+    });
+
+    console.log("✅ Pending order created:", newPendingOrder);
+
+    return res
+      .status(200)
+      .json({ message: "Payment submitted. Awaiting admin approval." });
+  } catch (err) {
+    console.error("❌ Failed to create pending order:", err);
+    return res.status(500).json({ message: "Server Error", error: err.message });
+  }
+});

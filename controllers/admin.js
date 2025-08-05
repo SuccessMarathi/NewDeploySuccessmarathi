@@ -6,6 +6,9 @@ import { promisify } from "util";
 import fs from "fs";
 import  User  from "../models/User.js"; 
 import multer from 'multer';
+import PendingOrder from "../models/PendingOrder.js";
+import Transaction from "../models/Transaction.js";
+import mongoose from "mongoose";
 
 
 export const createCourse = TryCatch(async (req, res) => {
@@ -350,4 +353,128 @@ export const sendMail = TryCatch(async (req, res) => {
       });
     }
   });
+});
+
+
+
+
+
+
+// GET /api/admin/pending-orders
+export const getPendingOrders = async (req, res) => {
+  try {
+    console.log("🔍 Inside getPendingOrders");
+    console.log("👤 User:", req.user);
+
+    const pendingOrders = await PendingOrder.find({})
+      .populate("user")
+      .populate("course")
+      .populate("referrer");
+
+    return res.status(200).json({ orders: pendingOrders });
+  } catch (err) {
+    console.error("❌ Error inside getPendingOrders:", err);
+    return res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
+};
+
+
+
+
+// Helper to update earnings
+const updateEarnings = (user, amount) => {
+  user.earnings = (user.earnings || 0) + amount;
+};
+
+
+
+export const handlePendingOrder = TryCatch(async (req, res) => {
+  const { orderId, action } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ message: "Invalid order ID" });
+  }
+
+  const order = await PendingOrder.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  const course = await Courses.findById(order.course);
+  const user = await User.findById(order.user);
+
+  if (!course || !user) {
+    return res.status(404).json({ message: "User or Course not found" });
+  }
+
+  const earningsMapping = {
+    "67b81fdeb7e36f5e02b649cd": { referrer: 160, grandReferrer: 1 },
+    "67b82012b7e36f5e02b649cf": { referrer: 280, grandReferrer: 40 },
+    "67b82046b7e36f5e02b649d1": { referrer: 490, grandReferrer: 70 },
+    "67b8206eb7e36f5e02b649d3": { referrer: 700, grandReferrer: 100 },
+    "67b82092b7e36f5e02b649d5": { referrer: 1605, grandReferrer: 220 },
+    "67b820b1b7e36f5e02b649d7": { referrer: 3650, grandReferrer: 399 },
+  };
+
+  if (action === "approve") {
+    const courseObjectId = new mongoose.Types.ObjectId(order.course);
+    const earnings = earningsMapping[order.course.toString()] || {
+      referrer: 0,
+      grandReferrer: 0,
+    };
+
+    const alreadyPurchased = user.purchasedCourses.some((c) =>
+      c.equals(courseObjectId)
+    );
+
+    if (!alreadyPurchased) {
+      user.purchasedCourses.push(courseObjectId);
+
+      if (order.referrer) {
+        const referrer = await User.findById(order.referrer);
+        if (referrer) {
+          updateEarnings(referrer, earnings.referrer);
+          await referrer.save();
+
+          user.referrer = referrer._id;
+
+          if (referrer.referrer) {
+            const grandReferrer = await User.findById(referrer.referrer);
+            if (grandReferrer) {
+              updateEarnings(grandReferrer, earnings.grandReferrer);
+              await grandReferrer.save();
+            }
+          }
+        }
+      }
+
+      await user.save();
+
+      await Transaction.create({
+        user: user._id,
+        userName: user.name,
+        contact: user.contact,
+        courseId: course._id,
+        courseName: course.name,
+        paymentId: order.transactionId,
+        status: "Success",
+        timestamp: new Date(),
+      });
+
+      await order.deleteOne();
+
+      return res.status(200).json({
+        message: "Order approved and course added",
+      });
+    } else {
+      return res
+        .status(400)
+        .json({ message: "User already owns the course" });
+    }
+  } else if (action === "reject") {
+    await order.deleteOne();
+    return res.status(200).json({ message: "Order rejected and removed" });
+  } else {
+    return res.status(400).json({ message: "Invalid action type" });
+  }
 });
